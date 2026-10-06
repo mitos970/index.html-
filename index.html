@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TRI/CORE Card Generator v3</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101114;color:#eee;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
+header{padding:14px 16px;background:#181a1f;border-bottom:1px solid #34363e}h1{font-size:18px;margin:0}.sub{font-size:12px;color:#aaa;margin-top:4px}
+main{display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:18px;padding:18px;align-items:start}
+.panel{background:#181a1f;border:1px solid #34363e;border-radius:14px;padding:14px}label{display:block;font-size:12px;color:#bbb;margin:10px 0 5px}
+input,textarea,button{width:100%;font:inherit;color:#fff;background:#24272e;border:1px solid #454955;border-radius:9px;padding:10px}
+input[type=range]{padding:0}textarea{min-height:70px;resize:vertical}button{margin-top:10px;font-weight:800;cursor:pointer}button.primary{background:#e3c15d;color:#111}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.status{font-size:12px;min-height:20px;margin-top:8px;color:#aaa}.status.ok{color:#8fe3a7}.status.err{color:#ff9c9c}
+.drop{border:1px dashed #666;padding:10px;border-radius:10px;margin-top:8px;font-size:12px;color:#bbb;text-align:center}.drop.drag{border-color:#e3c15d;background:#25251d}
+.previewWrap{display:flex;justify-content:center;overflow:auto}
+#card{position:relative;width:min(69vw,517.5px);aspect-ratio:69/94;background:linear-gradient(145deg,#2b2d34,#17181d);overflow:hidden;border-radius:3.5%;box-shadow:0 14px 48px #000}
+#artLayer{position:absolute;inset:0;z-index:0;overflow:hidden}
+#art{position:absolute;left:50%;top:50%;width:100%;height:100%;object-fit:cover;object-position:50% 50%;transform:translate(-50%,-50%) scale(1);transform-origin:center;display:none}
+#placeholder{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#777;font-size:14px;padding:30px}
+.shadeTop,.shadeBottom{position:absolute;left:0;right:0;z-index:1;pointer-events:none}.shadeTop{top:0;height:18%;background:linear-gradient(rgba(0,0,0,.36),transparent)}.shadeBottom{bottom:0;height:38%;background:linear-gradient(transparent,rgba(0,0,0,.48))}
+.ui{position:absolute;left:7.246%;right:7.246%;top:5.319%;bottom:5.319%;z-index:3;pointer-events:none}
+.top{position:absolute;left:1%;top:1.5%;display:flex;align-items:center;gap:1.5%;width:96%}.cost{width:9.5%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:#090909;border:2px solid #d7b251;color:#f5d67b;font-weight:900;font-size:clamp(13px,2.2vw,22px);box-shadow:0 2px 4px #000}
+.namebox{min-width:0;flex:1}.name{font-weight:900;font-size:clamp(15px,2.5vw,25px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f1d477;text-shadow:0 2px 4px #000}.orn{height:2px;margin-top:3px;width:94%;background:linear-gradient(90deg,#d8b451,rgba(216,180,81,.05))}
+.power{position:absolute;right:7%;bottom:34%;text-align:right;text-shadow:0 2px 4px #000}.power small{display:block;font-weight:900;color:#f1f1f1;font-size:clamp(9px,1.5vw,14px)}.power b{font-size:clamp(23px,4vw,39px);color:#f1d477}
+.role{position:absolute;left:17%;width:76%;text-shadow:0 2px 4px #000}.attack{bottom:18%}.core{bottom:4%}.rolehead{display:flex;align-items:center;gap:7px;font-weight:900;font-size:clamp(13px,2.1vw,21px);color:#eef1f4}.effect{font-weight:700;font-size:clamp(10px,1.55vw,15px);line-height:1.35;margin-top:3px}.red{text-shadow:0 0 7px red}.blue{text-shadow:0 0 7px #278bff}
+.safe{display:none;position:absolute;left:7.246%;right:7.246%;top:5.319%;bottom:5.319%;border:1px dashed #48dff5;z-index:5;pointer-events:none}#card.safeOn .safe{display:block}
+.rangeRow{display:grid;grid-template-columns:85px 1fr 50px;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:#bbb}.rangeRow output{text-align:right}
+.note{font-size:11px;color:#8f939d;line-height:1.55;margin-top:12px}
+@media(max-width:780px){main{grid-template-columns:1fr;padding:12px}.previewWrap{order:-1}#card{width:min(92vw,517.5px)}}
+</style></head>
+<body>
+<header><h1>TRI/CORE Card Generator v3</h1><div class="sub">ART即時反映 / 貼り付け / D&D / iPhone・Safari向け</div></header>
+<main>
+<section class="panel">
+<label>ART画像</label>
+<input id="artFile" type="file" accept="image/png,image/jpeg,image/webp,image/*">
+<div id="drop" class="drop">PC：ここへ画像をドロップ / 対応環境では画像を貼り付け</div>
+<div id="status" class="status">ART未選択</div>
+
+<div class="rangeRow"><span>ART SCALE</span><input id="scale" type="range" min="100" max="200" step="1" value="100"><output id="scaleOut">100%</output></div>
+<div class="rangeRow"><span>ART X</span><input id="posX" type="range" min="0" max="100" step="1" value="50"><output id="xOut">50%</output></div>
+<div class="rangeRow"><span>ART Y</span><input id="posY" type="range" min="0" max="100" step="1" value="50"><output id="yOut">50%</output></div>
+
+<div class="row"><div><label>COST</label><input id="cost" value="2"></div><div><label>POWER</label><input id="power" value="8000"></div></div>
+<label>CARD NAME</label><input id="name" value="奏皇姫 ヴァルセリア">
+<label>ATTACK</label><textarea id="attack">効果なし。</textarea>
+<label>CORE</label><textarea id="core">1枚引き、自分のアタッカー1体を
+次の戦闘中+1500。</textarea>
+<button id="refresh" type="button" class="primary">プレビュー強制更新</button>
+<button id="safeBtn" type="button">UI安全領域 ON / OFF</button>
+<div class="note">画像は外部サーバーへ送信しません。選択した画像はブラウザ内でFileReader → DataURLとして処理します。SUPPORTは未配置です。</div>
+</section>
+
+<section class="previewWrap">
+<div id="card">
+ <div id="artLayer"><img id="art" alt="ART"><div id="placeholder">ART画像を選択すると<br>ここへ即時反映されます</div></div>
+ <div class="shadeTop"></div><div class="shadeBottom"></div>
+ <div class="ui">
+  <div class="top"><div class="cost" id="vCost">2</div><div class="namebox"><div class="name" id="vName">奏皇姫 ヴァルセリア</div><div class="orn"></div></div></div>
+  <div class="power"><small>POWER</small><b id="vPower">8000</b></div>
+  <div class="role attack"><div class="rolehead">ATTACK <span class="red">⚔</span></div><div class="effect" id="vAttack">効果なし。</div></div>
+  <div class="role core"><div class="rolehead">CORE <span class="blue">◆</span></div><div class="effect" id="vCore">1枚引き、自分のアタッカー1体を<br>次の戦闘中+1500。</div></div>
+ </div>
+ <div class="safe"></div>
+</div>
+</section>
+</main>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const statusEl=$("status"), art=$("art"), placeholder=$("placeholder"), artFile=$("artFile");
+function status(msg,type=""){statusEl.textContent=msg;statusEl.className="status "+type}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])).replace(/\n/g,"<br>")}
+function updateText(){
+ try{
+  $("vCost").textContent=$("cost").value;$("vPower").textContent=$("power").value;$("vName").textContent=$("name").value;
+  $("vAttack").innerHTML=escapeHTML($("attack").value);$("vCore").innerHTML=escapeHTML($("core").value);
+ }catch(e){status("UI更新エラー: "+e.message,"err")}
+}
+function updateArtTransform(){
+ const s=Number($("scale").value)/100,x=$("posX").value,y=$("posY").value;
+ art.style.objectPosition=x+"% "+y+"%";art.style.transform="translate(-50%,-50%) scale("+s+")";
+ $("scaleOut").textContent=$("scale").value+"%";$("xOut").textContent=x+"%";$("yOut").textContent=y+"%";
+}
+function loadArt(file){
+ try{
+  if(!file){status("画像ファイルが選択されていません","err");return}
+  if(!file.type || !file.type.startsWith("image/")){status("画像ファイルを選択してください","err");return}
+  status("ART読み込み中…");
+  const reader=new FileReader();
+  reader.onerror=()=>status("画像を読み込めませんでした","err");
+  reader.onload=e=>{
+   art.onload=()=>{art.style.display="block";placeholder.style.display="none";updateArtTransform();status("ART読み込み完了","ok")};
+   art.onerror=()=>status("ART表示エラー","err");
+   art.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+ }catch(e){status("ART読み込みエラー: "+e.message,"err")}
+}
+function fromInput(){const f=artFile.files&&artFile.files[0];if(f)loadArt(f)}
+artFile.addEventListener("change",fromInput);
+artFile.addEventListener("input",fromInput);
+artFile.addEventListener("click",()=>{artFile.value=""});
+["cost","power","name","attack","core"].forEach(id=>["input","change","keyup"].forEach(ev=>$(id).addEventListener(ev,updateText)));
+["scale","posX","posY"].forEach(id=>["input","change"].forEach(ev=>$(id).addEventListener(ev,updateArtTransform)));
+$("refresh").addEventListener("click",()=>{updateText();updateArtTransform();if(art.src){art.style.display="block";placeholder.style.display="none"}});
+$("safeBtn").addEventListener("click",()=>$("card").classList.toggle("safeOn"));
+
+document.addEventListener("paste",e=>{
+ try{
+  const items=e.clipboardData&&e.clipboardData.items;if(!items)return;
+  for(const item of items){if(item.type&&item.type.startsWith("image/")){const f=item.getAsFile();if(f){e.preventDefault();loadArt(f);return}}}
+ }catch(err){status("貼り付けエラー: "+err.message,"err")}
+});
+const drop=$("drop");
+["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("drag")}));
+["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("drag")}));
+drop.addEventListener("drop",e=>{const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f)loadArt(f)});
+$("card").addEventListener("dragover",e=>e.preventDefault());
+$("card").addEventListener("drop",e=>{e.preventDefault();const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f)loadArt(f)});
+updateText();updateArtTransform();
+</script>
+</body></html>
